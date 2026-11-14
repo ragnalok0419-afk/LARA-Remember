@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"><title>리멤버 · LARA</title><style>
+:root{color-scheme:dark;font-family:system-ui,'Noto Sans KR',sans-serif;background:#101722;color:#edf4ff}*{box-sizing:border-box}body{margin:0}main{max-width:960px;margin:auto;min-height:100vh;display:flex;flex-direction:column}header{padding:18px 20px;background:#172233;border-bottom:1px solid #31415a;display:flex;justify-content:space-between;align-items:center}.brand{font-size:22px;font-weight:800;letter-spacing:.03em}.brand span{color:#7adac7}.sub{font-size:12px;color:#a7b7cb;margin-top:3px}nav{display:flex;gap:6px}button{cursor:pointer;border:0;background:#344863;color:white;border-radius:11px;padding:11px 15px;font:inherit}button.primary{background:#40b7a8;color:#082626;font-weight:750}button.danger{background:#6b303e}button:disabled{opacity:.45}button:hover{filter:brightness(1.1)}.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;flex:1;min-height:0}.content{padding:18px;display:flex;flex-direction:column;min-height:65vh}.chat{flex:1;min-height:350px;max-height:62vh;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:12px}.bubble{max-width:85%;padding:13px 16px;border-radius:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}.bot{background:#22334b;align-self:flex-start}.user{background:#165b61;align-self:flex-end}.role{display:block;color:#abc8c9;font-size:11px;margin-bottom:4px;font-weight:700}.input{display:flex;gap:8px;margin-top:14px}.input input{flex:1;background:#1c2b3f;color:white;border:1px solid #40536b;padding:14px;border-radius:12px;font-size:16px;min-width:0}.side{background:#172233;border-left:1px solid #31415a;padding:16px;display:flex;flex-direction:column;gap:16px}.panel{background:#233147;border-radius:12px;padding:14px}.panel h3{font-size:15px;margin:0 0 10px}.muted{color:#a9bacc;font-size:12px;line-height:1.5}.mem{border-bottom:1px solid #40516a;padding:8px 0;font-size:13px;display:flex;gap:8px;align-items:center}.mem:last-child{border:0}.mem span{flex:1}.mem button{padding:4px 8px}.chip{display:inline-block;background:#285e5f;color:#d1ffef;padding:5px 8px;border-radius:10px;font-size:12px}.notice{background:#463a26;color:#ffdb9b;padding:10px;border-radius:10px;font-size:12px;line-height:1.5}.toggle{display:flex;gap:7px;align-items:center;font-size:13px;margin:7px 0}.footer{font-size:11px;color:#8598af;margin-top:9px}.pending{padding:12px;border:1px solid #68bda9;background:#1d4145;border-radius:12px;display:none;margin-top:10px;line-height:1.5}.pending.show{display:block}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.select{width:100%;background:#1c2b3f;border:1px solid #40536b;border-radius:8px;padding:10px;color:#fff}@media(max-width:720px){.layout{grid-template-columns:1fr}.side{border-left:0;border-top:1px solid #31415a;order:2}.chat{max-height:48vh}.content{min-height:55vh}nav button{padding:8px}header{padding:12px}}
+</style></head><body><main><header><div><div class="brand">REMEMBER <span>· LARA</span></div><div class="sub">Listen And Remember AI · 차량 맥락형 AI 동승자</div></div><nav><button id="modeBtn">동승자 모드: 꺼짐</button><button id="resetBtn">대화 초기화</button></nav></header><div class="layout"><section class="content"><div class="notice">프로토타입 · 현재 차량 및 경로 데이터는 가상 입력. AI 서버를 연결하지 않으면 자유 대화는 제한적인 오프라인 응답으로 동작합니다. 실제 운전 중에는 직접 화면을 조작하지 마세요.</div><div class="chat" id="chat" aria-live="polite"></div><div id="pending" class="pending"><strong>기억 저장 확인</strong><div id="pendingText"></div><div class="buttons"><button class="primary" id="yes">기억할게</button><button id="no">저장하지 마</button></div></div><div class="input"><input id="message" aria-label="라라에게 말하기" placeholder="예: 내일 부산 출장이 있어. 기억해 줘" autocomplete="off"><button id="mic" title="음성 입력">🎙</button><button class="primary" id="send">전송</button></div><div class="footer" id="status">로컬 저장 · 승인된 기억만 재사용 · 생성형 대화는 모델 연결 필요</div></section><aside class="side"><div class="panel"><h3>차량 상태 (시뮬레이션)</h3><label class="muted">차종<select class="select" id="car"><option value="fuel">내연기관</option><option value="ev">전기차</option></select></label><label class="muted">예상 주행가능거리 (km)<input id="range" class="select" value="160" type="number" min="0" max="1500"></label><label class="muted">출발 도시 (모의 위치)<input id="origin" class="select" value="서울" type="text" placeholder="서울"></label><label class="muted">현재 경로 목적지<input id="dest" class="select" value="집" type="text"></label><button id="apply" class="primary" style="margin-top:10px">차량 정보 적용</button><div class="muted" style="margin-top:8px">실제 차량 연동 미구현 · 도로 거리: OpenStreetMap/OSRM 참고</div></div><div class="panel"><h3>주유·충전 경유지 (시연)</h3><div id="waypointInfo" class="muted">선택된 경유지 없음</div><div class="buttons"><button id="showNavigation" disabled>지도 경로 열기</button><button id="removeWaypoint">경유지 취소</button></div><div class="muted" style="margin-top:8px">차량 내비게이션 변경이 아닌 앱 내 경유 시뮬레이션입니다. 공개 OSM 시설 정보는 실제 영업·사용 가능 여부를 보장하지 않습니다.</div></div><div class="panel"><h3>허락받은 기억 <span id="memCount" class="chip">0</span></h3><div id="memories" class="muted">저장된 기억 없음</div><div class="buttons"><button class="danger" id="wipe">기억 모두 삭제</button></div></div><div class="panel"><h3>대화 방식</h3><select id="style" class="select"><option value="listen">들어주기 중심</option><option value="balanced">공감과 질문</option><option value="active">적극적인 대화</option></select><label class="toggle"><input type="checkbox" id="mute"> 조용히 가기</label><label class="toggle"><input type="checkbox" id="read" checked> 음성으로 답하기</label></div><div class="panel"><h3>선택: 로컬 AI 자유 대화</h3><label class="toggle"><input type="checkbox" id="useAI"> Ollama 연동 사용</label><div class="muted">AI 서버를 연결하지 않으면 제한적인 오프라인 규칙 대화를 제공합니다. 로컬 PC에서 server.py와 Ollama 모델을 실행해야 하며, Android 기기는 같은 네트워크의 서버 주소가 필요합니다.</div><input id="aiUrl" class="select" value="/chat" aria-label="로컬 대화 서버 주소"><button id="health" style="margin-top:8px">연결 검사</button></div><div class="panel"><h3>시연 예시</h3><div class="buttons"><button class="example" data-say="오늘 야근해서 너무 힘들었어">퇴근길 대화</button><button class="example" data-say="내일 부산 출장 가. 기억해 줘">미래 계획 기억</button><button class="example" data-say="내일 출장 준비 어떻게 할까?">기억 기반 준비</button><button class="example" data-say="라라야, 기억하는 거 알려줘">기억 조회</button></div></div></aside></div></main><script>
+(()=>{'use strict';const $=id=>document.getElementById(id);const storageKey='lara_v3';const initial={memories:[],history:[],passenger:false,silent:false,style:'listen',car:'fuel',range:160,origin:'서울',dest:'집',lastRoute:null,pending:null,stationOffer:null,waypoint:null};let requestEpoch=0;let state;try{state={...initial,...JSON.parse(localStorage.getItem(storageKey)||'{}'),history:[],pending:null}}catch{state={...initial}};state.history=Array.isArray(state.history)?state.history:[];state.pending=state.pending||null;const save=()=>{try{const durable={...state,history:[],pending:null};localStorage.setItem(storageKey,JSON.stringify(durable))}catch(e){$('status').textContent='저장 실패: '+e.message}};const clean=x=>String(x||'').trim().slice(0,700);const show=(speaker,t)=>{let b=document.createElement('div');b.className='bubble '+speaker;let r=document.createElement('span');r.className='role';r.textContent=speaker==='user'?'운전자':'LARA';b.append(r,document.createTextNode(t));$('chat').append(b);$('chat').scrollTop=$('chat').scrollHeight};const speak=t=>{if(!$('read').checked||state.silent)return;if(window.AndroidLara?.speak){window.AndroidLara.speak(t);return}if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=1.0;speechSynthesis.speak(u)}};const say=(t,voice=true)=>{show('bot',t);state.history.push({role:'assistant',content:t});state.history=state.history.slice(-28);save();if(voice)speak(t)};const update=()=>{$('memories').replaceChildren();if(!state.memories.length)$('memories').textContent='저장된 기억 없음';state.memories.forEach((m,i)=>{const d=document.createElement('div');d.className='mem';const s=document.createElement('span');s.textContent=m.text;const b=document.createElement('button');b.textContent='삭제';b.title='이 기억만 삭제';b.onclick=()=>{requestEpoch++;state.memories.splice(i,1);state.history=[];$('chat').replaceChildren();save();update();say('선택한 기억을 삭제했어요. 이전 대화 맥락도 초기화했습니다.')};d.append(s,b);$('memories').append(d)});$('memCount').textContent=state.memories.length;$('modeBtn').textContent='동승자 모드: '+(state.passenger?'켜짐':'꺼짐');$('mute').checked=state.silent;$('style').value=state.style;$('car').value=state.car;$('range').value=state.range;$('dest').value=state.dest;$('origin').value=state.origin||'서울';$('pending').classList.toggle('show',!!state.pending);$('pendingText').textContent=state.pending||''};const reply=(t)=>{if(state.silent&&!/(라라야|대화하자|말해)/.test(t))return '조용히 함께 갈게요. 다시 이야기하고 싶으면 “라라야”라고 불러주세요.';if(/조용히|말하지 마|대화 중단/.test(t)){state.silent=true;return '알겠어요. 조용히 있을게요. 필요하면 다시 불러주세요.'}if(/라라야|대화하자|다시 말해/.test(t))state.silent=false;if(/기억.*(삭제|지워)|모든 기억/.test(t)){requestEpoch++;state.memories=[];state.pending=null;state.history=[];return '저장한 기억을 모두 삭제했어요. 새 대화에 이전 기억을 사용하지 않을게요.'}if(/기억.*(알려|뭐|보여|확인)/.test(t)){if(state.passenger)return '동승자 모드에서는 개인 기억을 읽어드리지 않아요.';return state.memories.length?'허락받아 기억한 내용은 '+state.memories.map(m=>m.text).join(' / ')+' 입니다.':'아직 허락받아 저장한 기억이 없어요.'}if(/(내일|모레|주말|토요일|일요일|다음 주|출장|여행|발표|약속|좋아하|자주 가|선호|어제|야근)/.test(t)&&/(기억해|저장해|잊지 마)/.test(t)){let candidate=t.replace(/(기억해\s*줘?|저장해\s*줘?|잊지\s*마)/g,'').replace(/[.!?]+$/,'').trim();state.pending=candidate;return '“'+candidate+'”라는 내용을 기억할까요? 저장하기 전에 아래 버튼으로 승인해 주세요.'}if(/(기억해|저장해|잊지 마)/.test(t)){state.pending=t.replace(/(기억해\s*줘?|저장해\s*줘?|잊지\s*마)/g,'').trim()||'운전자의 요청 사항';return '이 내용을 저장해도 될까요? 아래에서 선택해 주세요.'}const visible=state.passenger?[]:state.memories;const trip=visible.find(m=>/부산|출장|여행|강릉|발표|약속/.test(m.text));if(/(출장|여행|이동|출발|준비|내일|부산|강릉)/.test(t)&&trip){return '전에 “'+trip.text+'”라고 말씀하셨죠. 지금 차량의 예상 주행가능거리는 '+state.range+'km이고 현재 목적지는 '+state.dest+'로 설정돼 있어요(모의 데이터). 출발 전에 주유·충전과 목적지 경로를 확인할까요? 동의 없이 경로를 바꾸지는 않을게요.'}if(/(주유|충전|연료|배터리)/.test(t))return '현재 모의 차량의 예상 주행가능거리는 '+state.range+'km예요. 실제 차량 값이 아니므로 경로상 주유·충전 가능 여부를 확정할 수는 없어요. 필요한 경유지를 함께 확인해 볼까요?';if(/(친구|동승자|같이 타)/.test(t))return '함께 타는 상황이라면 과거의 개인 이야기는 꺼내지 않을게요. 동승자 모드를 켜면 저장된 기억을 대화에 사용하지 않아요.';if(/(힘들|지쳤|야근|스트레스|속상|짜증)/.test(t))return state.style==='listen'?'오늘 많이 지치셨겠어요. 원하면 더 얘기해 주세요. 편하게 듣고 있을게요.':'많이 힘든 하루였겠어요. 지금은 이야기를 들어드리는 게 좋을까요, 아니면 함께 해결 방법을 생각해 볼까요?';if(/(기뻐|좋아|합격|성공|행복)/.test(t))return '정말 기쁜 일이 있었군요! 어떤 일이 있었는지 들려주실래요?';if(/(안녕|반가워)/.test(t))return '안녕하세요. 라라예요. 오늘은 어떤 하루였나요?';if(state.style==='active')return '말씀해 주신 “'+t.slice(0,70)+'”에 대해 더 듣고 싶어요. 어떤 점이 가장 중요했나요?';if(state.style==='balanced')return '그렇군요. 조금 더 들려주실래요? 필요한 내용은 요청하실 때만 기억할게요.';return '듣고 있어요. 편하게 계속 이야기해 주세요. 이 앱의 오프라인 대화 기능은 제한적이지만, 허락하신 기억은 다음 대화에도 유지할 수 있어요.'};async function receive(t){
+ t=clean(t);if(!t)return;
+ show('user',t);
+ state.history.push({role:'user',content:t});state.history=state.history.slice(-28);
+ const deterministic=/(기억.*(삭제|지워)|모든 기억|기억해|저장해|잊지 마|조용히|말하지 마|대화 중단)/.test(t);
+ // Vehicle and route questions are handled by verified tools before the LLM.
+ const toolCandidate=vehicleQuestion(t)||routeQuestion(t);
+ if(!deterministic && toolCandidate){
+  const epoch=++requestEpoch;
+  const answer=await vehicleTool(t);
+  if(epoch!==requestEpoch)return;
+  if(answer){$('status').textContent='차량·도로 정보 기능 실행됨 (모의 차량 / 온라인 경로)';say(answer);return;}
+ }
+ // Only an explicit driver confirmation may set a stopover.
+ if(state.stationOffer && /^(?:응(?:\s*그곳으로\s*가자)?|네(?:\s*안내해\s*줘)?|그래(?:\s*그쪽으로\s*가자)?|좋아(?:\s*가자)?|가자|그\s*주유소로\s*가자|그\s*충전소로\s*가자|안내해\s*줘|그곳으로\s*가자|추가해\s*줘|설정해\s*줘|경유해\s*줘)[.!?\s]*$/u.test(t)){
+   const picked=state.stationOffer;state.stationOffer=null;
+   state.waypoint=picked;save();refreshWaypoint();
+   say(`동의하신 ${picked.name}을 앱의 시연 경유지로 추가했어요. 원래 목적지 ${state.lastRoute?.destination||state.dest}는 유지돼요. 오른쪽 '지도 경로 열기' 버튼을 누르면 외부 지도에서 경유지를 확인할 수 있어요. 실제 차량 내비게이션은 변경하지 않았어요.`);return;
+ }
+ if(state.stationOffer && /^(?:아니|아니요|싫어|괜찮아|취소|안\s*가|그만)[.!?\s]*$/u.test(t)){
+   state.stationOffer=null;save();say('알겠어요. 경유지는 추가하지 않았어요.');return;
+ }
+ // Follow up on route-shortage, or ask to locate fuel/EV stations.
+ const wantStation=/(주유소|충전소|주유|충전|기름.*(?:넣|찾)|안내해\s*줘|가자)/.test(t);
+ if(!deterministic && state.lastRoute && (wantStation || (/^(?:응|네|그래|좋아)[.!?\s]*$/u.test(t)&&state.lastRoute.km>state.range))){
+    const epoch=++requestEpoch;
+    const kind=state.car==='ev'?'charging_station':'fuel';
+    $('status').textContent='실제 OSM 주유·충전 시설 후보를 확인 중…';
+    try{
+       const url='/stations?origin='+encodeURIComponent(state.lastRoute.origin)+'&destination='+encodeURIComponent(state.lastRoute.destination)+'&kind='+kind+'&range='+encodeURIComponent(state.range);
+       const rr=await fetch(url);const result=await rr.json();if(epoch!==requestEpoch)return;
+       if(!rr.ok||!result.ok){say(result.error||'시설을 조회할 수 없어요. 경유지는 추가하지 않았어요.');return;}
+       if(!result.stations.length){say('현재 공개 지도 데이터에서 진행 경로 주변의 주유·충전 시설을 찾지 못했어요. 자동으로 경유지를 정하지 않았어요.');return;}
+       const s=result.stations[0];state.stationOffer=s;save();
+       say(`진행 경로 주변에 '${s.name}' 후보가 검색됐어요. 실제 진입 가능 여부, 영업 상태와 그곳까지의 도로 거리는 아직 확인되지 않았어요. 이 후보를 시연 경유지로 추가하고 외부 지도에서 경로를 확인할까요? 추가하려면 '응' 또는 '가자'라고 말해 주세요.`);return;
+    }catch(e){if(epoch===requestEpoch)say('온라인 충전소·주유소 조회에 실패했어요. 경유지는 추가하지 않았어요.');return;}
+ }
+ const out=reply(t);save();update();
+ // Only offer free conversation through a real model. Guard against a stale
+ // model reply arriving after the driver changes privacy mode or deletes data.
+ if($('useAI').checked && !deterministic && !state.silent){
+  const epoch=++requestEpoch;
+  const safeHistory=state.passenger?state.history.slice(-1):state.history.slice(-16);
+  const payload={history:safeHistory,memories:state.passenger?[]:state.memories.map(m=>m.text),passenger:state.passenger,style:state.style,car:state.car,range:state.range,destination:state.dest};
+  $('status').textContent='로컬 AI가 답변을 생성하고 있습니다…';
+  try{
+   const res=await fetch(new URL($('aiUrl').value.trim(),location.origin).href,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+   if(!res.ok)throw new Error('HTTP '+res.status);
+   const data=await res.json();
+   if(epoch!==requestEpoch)return;
+   if(typeof data.reply==='string' && data.reply.trim()){
+    $('status').textContent='로컬 AI 대화 · 승인된 기억만 사용';say(data.reply.trim());return;
+   }
+   throw new Error('빈 응답');
+  }catch(e){if(epoch!==requestEpoch)return;$('status').textContent='로컬 AI 오류: '+e.message; say('AI 답변을 생성하지 못했어요. 서버 창의 오류를 확인하거나 다시 말해 주세요.',false);return;}
+ }
+ say(out);
+}
+// High-priority vehicle tools. A tool result must precede free-form AI text.
+const CITY_NAMES=['서울','부산','인천','수원','대전','대구','광주','울산','세종','춘천','강릉','전주','청주','천안','포항','창원','성남','용인','제주','안양','안산','김해','김포','평택'];
+function knownCity(text){return CITY_NAMES.find(c=>text.includes(c))||null}
+function vehicleQuestion(text){return /(차량|자동차|차 상태|기름|연료|배터리|주행가능|몇\s*키로|몇\s*킬로|얼마나\s*갈)/.test(text)}
+function routeQuestion(text){return /(몇\s*(?:키로|킬로|km)|거리|얼마나\s*멀|얼마나\s*걸|갈\s*수\s*있|갈\s*수\s*있을|부족|도착\s*가능|주유\s*필요|충전\s*필요)/i.test(text)}
+function parsePlaces(text){
+  const named=text.match(/(서울|부산|인천|수원|대전|대구|광주|울산|세종|춘천|강릉|전주|청주|천안|포항|창원|성남|용인|제주|안양|안산|김해|김포|평택)(?:시|에서|부터|을|를|까지|로|에|은|는|과|와)?/g)||[];
+  let cities=named.map(x=>knownCity(x)).filter(Boolean);
+  return {from:cities.length>=2?cities[0]:state.origin||'서울',to:cities.length>=2?cities[1]:cities[0]||null};
+}
+async function vehicleTool(text){
+  // Can answer a simple vehicle status question even without a network connection.
+  const asksStatus=/(차량\s*상태|차\s*상태|주행가능거리|기름\s*(?:얼마|얼만|남)|연료\s*(?:얼마|얼만|남)|배터리\s*(?:잔량|몇\s*퍼))/i.test(text);
+  const place=parsePlaces(text);
+  const asksRoute=routeQuestion(text) && (place.to || state.lastRoute || (state.dest && knownCity(state.dest)));
+  if(asksStatus && !asksRoute){
+    return `현재 화면에 설정된 모의 ${state.car==='ev'?'전기차':'내연기관차'} 예상 주행가능거리는 ${state.range}km이고, 현재 경로 목적지는 ${state.dest||'미설정'}이에요. 실제 차량 데이터가 아니라는 점을 참고해 주세요.`;
+  }
+  if(!asksRoute)return null;
+  let from=place.from,to=place.to;
+  if(!to && state.lastRoute){from=state.lastRoute.origin;to=state.lastRoute.destination;}
+  if(!to && state.dest)to=knownCity(state.dest);
+  if(!to)return '어느 도시로 이동하시나요? 출발지와 목적지를 말씀해 주세요.';
+  if(from===to)return '같은 도시 안의 출발지·목적지 상세 주소를 알아야 정확한 경로를 조회할 수 있어요.';
+  $('status').textContent=`${from}에서 ${to}까지 도로 경로를 조회 중…`;
+  try{
+    const api='/route?origin='+encodeURIComponent(from)+'&destination='+encodeURIComponent(to);
+    const res=await fetch(api);
+    const data=await res.json();
+    if(!res.ok||!data.ok)return data.error||'지금 도로 경로를 조회할 수 없어요.';
+    state.lastRoute=data;state.stationOffer=null;state.waypoint=null;save();refreshWaypoint();
+    const remaining=state.range-data.km;
+    const compare=remaining<0?`설정된 모의 차량의 주행가능거리 ${state.range}km보다 약 ${Math.abs(remaining).toFixed(1)}km 더 길기 때문에 중간에 주유나 충전이 필요할 수 있어요. 진행 경로에서 시설을 찾아볼까요? 원하시면 '주유소 찾아줘' 또는 '충전소 찾아줘'라고 말씀해 주세요.`:
+      `모의 차량 주행가능거리 ${state.range}km와 비교하면 계산상 약 ${remaining.toFixed(1)}km의 여유가 있지만, 실제 연료 소비와 안전 여유를 고려해 확인이 필요해요.`;
+    const isCompare=/(갈\s*수|부족|주유|충전|기름|배터리|연료|도착\s*가능|가능할까)/.test(text);
+    let extra='';
+    if(isCompare && remaining<0){
+      try{
+        const kind=state.car==='ev'?'charging_station':'fuel';
+        const url='/stations?origin='+encodeURIComponent(data.origin)+'&destination='+encodeURIComponent(data.destination)+'&kind='+kind+'&range='+encodeURIComponent(state.range);
+        const rr=await fetch(url);const j=await rr.json();
+        if(rr.ok && j.ok && j.stations?.length){
+          const candidate=j.stations[0];state.stationOffer=candidate;save();
+          extra=` 경로 주변의 '${candidate.name}'이 지도에 등록되어 있어요. 실제 진입로와 영업 상태는 확인되지 않았어요. 이곳을 앱의 시연 경유지로 추가하고 외부 지도에서 확인할까요? 동의하면 '응, 가자'라고 말씀해 주세요.`;
+        }else{extra=' 현재 주유·충전 시설을 자동 확인하지 못했어요. 안전한 곳에서 직접 시설을 확인해 주세요.';}
+      }catch(e){extra=' 시설 검색 서비스에 연결되지 않아 경유지를 자동으로 설정하지 않았어요.';}
+    }
+    return `${data.origin}에서 ${data.destination}까지 온라인 도로 경로 조회 결과 약 ${data.km}km, 예상 주행시간 약 ${data.minutes}분이에요. ${isCompare?compare:''} 출발·도착 도시 중심 기준의 대략적인 도로 거리이며 실시간 교통 상황은 반영되지 않았어요. (OpenStreetMap/OSRM)${extra}`;
+  }catch(e){return '현재 인터넷 도로 경로 서비스 연결에 실패했어요. 확인되지 않은 거리를 추측해서 알려드리지는 않을게요.';}
+}
+function refreshWaypoint(){
+  const info=$('waypointInfo'),btn=$('showNavigation');if(!info||!btn)return;
+  if(!state.waypoint){info.textContent='선택된 경유지 없음';btn.disabled=true;return;}
+  info.textContent=`${state.waypoint.name} · 원래 목적지 ${state.lastRoute?.destination||state.dest} 유지 · 실제 경로 미확정`;
+  btn.disabled=false;
+}
+$('removeWaypoint').onclick=()=>{state.waypoint=null;state.stationOffer=null;save();refreshWaypoint();say('시연 경유지를 취소했어요. 원래 목적지는 유지됩니다.')};
+$('showNavigation').onclick=()=>{
+ const s=state.waypoint,r=state.lastRoute;
+ if(!s||!r)return;
+ // Google Maps directions link is user-triggered; no car navigation control.
+ const params=new URLSearchParams({api:'1',origin:r.origin,destination:r.destination,waypoints:`${s.lat},${s.lon}`,travelmode:'driving'});
+ const mapUrl='https://www.google.com/maps/dir/?'+params.toString(); if(window.AndroidLara?.openExternal)window.AndroidLara.openExternal(mapUrl);else window.open(mapUrl,'_blank','noopener,noreferrer');
+};
+refreshWaypoint();
+$('health').onclick=async()=>{try{const url=new URL($('aiUrl').value.trim().replace(/\/chat$/,'/health'),location.origin).href;const r=await fetch(url);const j=await r.json();$('status').textContent=j.ready?'로컬 언어모델 연결됨: '+j.model:'서버 연결됨. 모델 준비 확인 필요.'}catch(e){$('status').textContent='서버 연결 실패: '+e.message}};$('send').onclick=()=>{let v=$('message').value;$('message').value='';receive(v)};$('message').onkeydown=e=>{if(e.key==='Enter')$('send').click()};$('yes').onclick=()=>{if(!state.pending)return;state.memories.push({text:state.pending,created:new Date().toISOString()});state.pending=null;save();update();say('동의를 확인했어요. 다음에 혼자 이동하실 때 이 기억을 참고할게요.')};$('no').onclick=()=>{state.pending=null;save();update();say('저장하지 않을게요.')};$('wipe').onclick=()=>{if(!confirm('승인된 모든 기억을 삭제할까요?'))return;requestEpoch++;state.memories=[];state.pending=null;state.history=[];$('chat').replaceChildren();save();update();say('모든 기억과 대화 맥락을 삭제했어요.')};$('modeBtn').onclick=()=>{requestEpoch++;state.passenger=!state.passenger;if(state.passenger){$('chat').replaceChildren();state.history=[];}save();update();say(state.passenger?'동승자 모드를 켰어요. 과거 개인 기억을 사용하지 않겠습니다.':'동승자 모드를 껐어요. 승인된 기억을 다시 사용할 수 있어요.')};$('resetBtn').onclick=()=>{if(!confirm('대화 기록을 지울까요? 승인된 기억은 유지됩니다.'))return;requestEpoch++;state.history=[];$('chat').replaceChildren();save();say('대화 기록을 초기화했어요. 승인된 기억은 그대로 유지됩니다.')};$('mute').onchange=e=>{state.silent=e.target.checked;save();update()};$('style').onchange=e=>{state.style=e.target.value;save()};$('apply').onclick=()=>{state.car=$('car').value;state.range=Math.max(0,Math.min(1500,Number($('range').value)||0));state.dest=clean($('dest').value);state.origin=clean($('origin').value)||'서울';save();say('모의 차량 정보를 적용했어요. 실제 차량 데이터는 아직 연결되지 않았어요.')};document.querySelectorAll('.example').forEach(e=>e.onclick=()=>receive(e.dataset.say));// Browsers add punctuation to Korean ASR output, often marking statements as questions.
+// This is a conservative UX heuristic, not reliable intonation detection.
+const normalizeSpeechPunctuation=(raw)=>{
+ let text=clean(raw).replace(/\s+/g,' ');
+ if(!text)return text;
+ const bare=text.replace(/[?!.。？！]+$/u,'').trim();
+ if(!bare)return text;
+ // Preserve common explicit Korean question endings and question words.
+ const clearQuestion=/(?:어때|뭐야|뭔데|누구|어디|언제|얼마|몇|왜|어떻게|무엇|뭐지|누구야|맞아|맞지|그렇지|가능해|괜찮아|할까|될까|있을까|좋을까|나요|인가요|습니까|니|냐|까|죠|지요|세요)\s*$/u.test(bare)
+   || /(?:뭐|왜|어디|언제|어떻게|얼마|몇|누구|무슨|어느)\s*.+/u.test(bare);
+ const clearStatement=/(?:힘들었어|속상했어|피곤해|힘들어|슬퍼|기뻐|좋아해|기억해\s*줘|저장해\s*줘|출장이\s*있어|가고\s*있어|했어|였어|했어요|입니다|이에요|예요|거야|거예요|할게|할게요|하자|해줘|해\s*줘|봐줘|들어줘|알려줘)\s*$/u.test(bare);
+ if(clearStatement)return bare+'.';
+ if(clearQuestion)return bare+'?';
+ // No explicit question marker: default ambiguous speech to a statement.
+ if(/[?？]$/u.test(text))return bare+'.';
+ return text;
+};
+window.laraSpeechResult=(t)=>{if(t)receive(normalizeSpeechPunctuation(t))};$('mic').onclick=()=>{if(window.AndroidLara?.listen){window.AndroidLara.listen();return}const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Rec){say('이 브라우저에서는 음성인식을 지원하지 않아요. 텍스트 입력을 사용해 주세요.',false);return}let rec=new Rec();rec.lang='ko-KR';rec.onresult=e=>receive(normalizeSpeechPunctuation(e.results[0][0].transcript));rec.onerror=e=>say('음성 인식 오류: '+e.error,false);rec.start()};update();say('안녕하세요, 라라예요. 오늘 있었던 일을 편하게 이야기해 주세요. 기억해야 할 일은 반드시 허락받고 저장할게요.',false);
+})();
+</script></body></html>

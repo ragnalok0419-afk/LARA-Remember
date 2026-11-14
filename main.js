@@ -1,0 +1,46 @@
+
+(()=>{'use strict';const $=id=>document.getElementById(id);const storageKey='lara_v3';const initial={memories:[],history:[],passenger:false,silent:false,style:'listen',car:'fuel',range:160,dest:'집',pending:null};let requestEpoch=0;let state;try{state={...initial,...JSON.parse(localStorage.getItem(storageKey)||'{}'),history:[],pending:null}}catch{state={...initial}};state.history=Array.isArray(state.history)?state.history:[];state.pending=state.pending||null;const save=()=>{try{const durable={...state,history:[],pending:null};localStorage.setItem(storageKey,JSON.stringify(durable))}catch(e){$('status').textContent='저장 실패: '+e.message}};const clean=x=>String(x||'').trim().slice(0,700);const show=(speaker,t)=>{let b=document.createElement('div');b.className='bubble '+speaker;let r=document.createElement('span');r.className='role';r.textContent=speaker==='user'?'운전자':'LARA';b.append(r,document.createTextNode(t));$('chat').append(b);$('chat').scrollTop=$('chat').scrollHeight};const speak=t=>{if(!$('read').checked||state.silent)return;if(window.AndroidLara?.speak){window.AndroidLara.speak(t);return}if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=1.0;speechSynthesis.speak(u)}};const say=(t,voice=true)=>{show('bot',t);state.history.push({role:'assistant',content:t});state.history=state.history.slice(-28);save();if(voice)speak(t)};const update=()=>{$('memories').replaceChildren();if(!state.memories.length)$('memories').textContent='저장된 기억 없음';state.memories.forEach((m,i)=>{const d=document.createElement('div');d.className='mem';const s=document.createElement('span');s.textContent=m.text;const b=document.createElement('button');b.textContent='삭제';b.title='이 기억만 삭제';b.onclick=()=>{requestEpoch++;state.memories.splice(i,1);state.history=[];$('chat').replaceChildren();save();update();say('선택한 기억을 삭제했어요. 이전 대화 맥락도 초기화했습니다.')};d.append(s,b);$('memories').append(d)});$('memCount').textContent=state.memories.length;$('modeBtn').textContent='동승자 모드: '+(state.passenger?'켜짐':'꺼짐');$('mute').checked=state.silent;$('style').value=state.style;$('car').value=state.car;$('range').value=state.range;$('dest').value=state.dest;$('pending').classList.toggle('show',!!state.pending);$('pendingText').textContent=state.pending||''};const reply=(t)=>{if(state.silent&&!/(라라야|대화하자|말해)/.test(t))return '조용히 함께 갈게요. 다시 이야기하고 싶으면 “라라야”라고 불러주세요.';if(/조용히|말하지 마|대화 중단/.test(t)){state.silent=true;return '알겠어요. 조용히 있을게요. 필요하면 다시 불러주세요.'}if(/라라야|대화하자|다시 말해/.test(t))state.silent=false;if(/기억.*(삭제|지워)|모든 기억/.test(t)){requestEpoch++;state.memories=[];state.pending=null;state.history=[];return '저장한 기억을 모두 삭제했어요. 새 대화에 이전 기억을 사용하지 않을게요.'}if(/기억.*(알려|뭐|보여|확인)/.test(t)){if(state.passenger)return '동승자 모드에서는 개인 기억을 읽어드리지 않아요.';return state.memories.length?'허락받아 기억한 내용은 '+state.memories.map(m=>m.text).join(' / ')+' 입니다.':'아직 허락받아 저장한 기억이 없어요.'}if(/(내일|모레|주말|토요일|일요일|다음 주|출장|여행|발표|약속|좋아하|자주 가|선호|어제|야근)/.test(t)&&/(기억해|저장해|잊지 마)/.test(t)){let candidate=t.replace(/(기억해\s*줘?|저장해\s*줘?|잊지\s*마)/g,'').replace(/[.!?]+$/,'').trim();state.pending=candidate;return '“'+candidate+'”라는 내용을 기억할까요? 저장하기 전에 아래 버튼으로 승인해 주세요.'}if(/(기억해|저장해|잊지 마)/.test(t)){state.pending=t.replace(/(기억해\s*줘?|저장해\s*줘?|잊지\s*마)/g,'').trim()||'운전자의 요청 사항';return '이 내용을 저장해도 될까요? 아래에서 선택해 주세요.'}const visible=state.passenger?[]:state.memories;const trip=visible.find(m=>/부산|출장|여행|강릉|발표|약속/.test(m.text));if(/(출장|여행|이동|출발|준비|내일|부산|강릉)/.test(t)&&trip){return '전에 “'+trip.text+'”라고 말씀하셨죠. 지금 차량의 예상 주행가능거리는 '+state.range+'km이고 현재 목적지는 '+state.dest+'로 설정돼 있어요(모의 데이터). 출발 전에 주유·충전과 목적지 경로를 확인할까요? 동의 없이 경로를 바꾸지는 않을게요.'}if(/(주유|충전|연료|배터리)/.test(t))return '현재 모의 차량의 예상 주행가능거리는 '+state.range+'km예요. 실제 차량 값이 아니므로 경로상 주유·충전 가능 여부를 확정할 수는 없어요. 필요한 경유지를 함께 확인해 볼까요?';if(/(친구|동승자|같이 타)/.test(t))return '함께 타는 상황이라면 과거의 개인 이야기는 꺼내지 않을게요. 동승자 모드를 켜면 저장된 기억을 대화에 사용하지 않아요.';if(/(힘들|지쳤|야근|스트레스|속상|짜증)/.test(t))return state.style==='listen'?'오늘 많이 지치셨겠어요. 원하면 더 얘기해 주세요. 편하게 듣고 있을게요.':'많이 힘든 하루였겠어요. 지금은 이야기를 들어드리는 게 좋을까요, 아니면 함께 해결 방법을 생각해 볼까요?';if(/(기뻐|좋아|합격|성공|행복)/.test(t))return '정말 기쁜 일이 있었군요! 어떤 일이 있었는지 들려주실래요?';if(/(안녕|반가워)/.test(t))return '안녕하세요. 라라예요. 오늘은 어떤 하루였나요?';if(state.style==='active')return '말씀해 주신 “'+t.slice(0,70)+'”에 대해 더 듣고 싶어요. 어떤 점이 가장 중요했나요?';if(state.style==='balanced')return '그렇군요. 조금 더 들려주실래요? 필요한 내용은 요청하실 때만 기억할게요.';return '듣고 있어요. 편하게 계속 이야기해 주세요. 이 앱의 오프라인 대화 기능은 제한적이지만, 허락하신 기억은 다음 대화에도 유지할 수 있어요.'};async function receive(t){
+ t=clean(t);if(!t)return;
+ show('user',t);
+ state.history.push({role:'user',content:t});state.history=state.history.slice(-28);
+ const deterministic=/(기억.*(삭제|지워)|모든 기억|기억해|저장해|잊지 마|조용히|말하지 마|대화 중단)/.test(t);
+ const out=reply(t);save();update();
+ // Only offer free conversation through a real model. Guard against a stale
+ // model reply arriving after the driver changes privacy mode or deletes data.
+ if($('useAI').checked && !deterministic && !state.silent){
+  const epoch=++requestEpoch;
+  const safeHistory=state.passenger?state.history.slice(-1):state.history.slice(-16);
+  const payload={history:safeHistory,memories:state.passenger?[]:state.memories.map(m=>m.text),passenger:state.passenger,style:state.style,car:state.car,range:state.range,destination:state.dest};
+  $('status').textContent='로컬 AI가 답변을 생성하고 있습니다…';
+  try{
+   const res=await fetch($('aiUrl').value.trim(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+   if(!res.ok)throw new Error('HTTP '+res.status);
+   const data=await res.json();
+   if(epoch!==requestEpoch)return;
+   if(typeof data.reply==='string' && data.reply.trim()){
+    $('status').textContent='로컬 AI 대화 · 승인된 기억만 사용';say(data.reply.trim());return;
+   }
+   throw new Error('빈 응답');
+  }catch(e){if(epoch!==requestEpoch)return;$('status').textContent='로컬 AI 오류: '+e.message; say('AI 답변을 생성하지 못했어요. 서버 창의 오류를 확인하거나 다시 말해 주세요.',false);return;}
+ }
+ say(out);
+}
+$('health').onclick=async()=>{try{const url=$('aiUrl').value.trim().replace(/\/chat$/,'/health');const r=await fetch(url);const j=await r.json();$('status').textContent=j.ready?'로컬 언어모델 연결됨: '+j.model:'서버 연결됨. 모델 준비 확인 필요.'}catch(e){$('status').textContent='서버 연결 실패: '+e.message}};$('send').onclick=()=>{let v=$('message').value;$('message').value='';receive(v)};$('message').onkeydown=e=>{if(e.key==='Enter')$('send').click()};$('yes').onclick=()=>{if(!state.pending)return;state.memories.push({text:state.pending,created:new Date().toISOString()});state.pending=null;save();update();say('동의를 확인했어요. 다음에 혼자 이동하실 때 이 기억을 참고할게요.')};$('no').onclick=()=>{state.pending=null;save();update();say('저장하지 않을게요.')};$('wipe').onclick=()=>{if(!confirm('승인된 모든 기억을 삭제할까요?'))return;requestEpoch++;state.memories=[];state.pending=null;state.history=[];$('chat').replaceChildren();save();update();say('모든 기억과 대화 맥락을 삭제했어요.')};$('modeBtn').onclick=()=>{requestEpoch++;state.passenger=!state.passenger;if(state.passenger){$('chat').replaceChildren();state.history=[];}save();update();say(state.passenger?'동승자 모드를 켰어요. 과거 개인 기억을 사용하지 않겠습니다.':'동승자 모드를 껐어요. 승인된 기억을 다시 사용할 수 있어요.')};$('resetBtn').onclick=()=>{if(!confirm('대화 기록을 지울까요? 승인된 기억은 유지됩니다.'))return;requestEpoch++;state.history=[];$('chat').replaceChildren();save();say('대화 기록을 초기화했어요. 승인된 기억은 그대로 유지됩니다.')};$('mute').onchange=e=>{state.silent=e.target.checked;save();update()};$('style').onchange=e=>{state.style=e.target.value;save()};$('apply').onclick=()=>{state.car=$('car').value;state.range=Math.max(0,Math.min(1500,Number($('range').value)||0));state.dest=clean($('dest').value);save();say('모의 차량 정보를 적용했어요. 실제 차량 데이터는 아직 연결되지 않았어요.')};document.querySelectorAll('.example').forEach(e=>e.onclick=()=>receive(e.dataset.say));// Browsers add punctuation to Korean ASR output, often marking statements as questions.
+// This is a conservative UX heuristic, not reliable intonation detection.
+const normalizeSpeechPunctuation=(raw)=>{
+ let text=clean(raw).replace(/\s+/g,' ');
+ if(!text)return text;
+ const bare=text.replace(/[?!.。？！]+$/u,'').trim();
+ if(!bare)return text;
+ // Preserve common explicit Korean question endings and question words.
+ const clearQuestion=/(?:어때|뭐야|뭔데|누구|어디|언제|얼마|몇|왜|어떻게|무엇|뭐지|누구야|맞아|맞지|그렇지|가능해|괜찮아|할까|될까|있을까|좋을까|나요|인가요|습니까|니|냐|까|죠|지요|세요)\s*$/u.test(bare)
+   || /(?:뭐|왜|어디|언제|어떻게|얼마|몇|누구|무슨|어느)\s*.+/u.test(bare);
+ const clearStatement=/(?:힘들었어|속상했어|피곤해|힘들어|슬퍼|기뻐|좋아해|기억해\s*줘|저장해\s*줘|출장이\s*있어|가고\s*있어|했어|였어|했어요|입니다|이에요|예요|거야|거예요|할게|할게요|하자|해줘|해\s*줘|봐줘|들어줘|알려줘)\s*$/u.test(bare);
+ if(clearStatement)return bare+'.';
+ if(clearQuestion)return bare+'?';
+ // No explicit question marker: default ambiguous speech to a statement.
+ if(/[?？]$/u.test(text))return bare+'.';
+ return text;
+};
+window.laraSpeechResult=(t)=>{if(t)receive(normalizeSpeechPunctuation(t))};$('mic').onclick=()=>{if(window.AndroidLara?.listen){window.AndroidLara.listen();return}const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Rec){say('이 브라우저에서는 음성인식을 지원하지 않아요. 텍스트 입력을 사용해 주세요.',false);return}let rec=new Rec();rec.lang='ko-KR';rec.onresult=e=>receive(normalizeSpeechPunctuation(e.results[0][0].transcript));rec.onerror=e=>say('음성 인식 오류: '+e.error,false);rec.start()};update();say('안녕하세요, 라라예요. 오늘 있었던 일을 편하게 이야기해 주세요. 기억해야 할 일은 반드시 허락받고 저장할게요.',false);
+})();

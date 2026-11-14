@@ -1,0 +1,18 @@
+리멤버 LARA Android 빌드 준비본 (실제 APK 미포함)
+
+중요: ZIP에는 실제 빌드된 APK가 없습니다. Android SDK/Gradle 및 휴대폰에서 직접 설치 시험이 필요합니다.
+
+1) GitHub에 이 폴더 내용(.github 폴더 포함)을 업로드합니다.
+2) GitHub > Actions > Build LARA Android installable APK > Run workflow.
+3) Actions 완료 후 Artifacts에서 LARA-Android-release-APK 다운로드.
+4) 실제 Android 휴대폰에 설치해 테스트하세요.
+5) PC에서 Ollama와 qwen3:1.7b를 먼저 실행합니다.
+6) 휴대폰과 PC를 같은 개인 Wi-Fi에 연결합니다.
+7) 휴대폰연결_PC서버실행.bat을 실행해 YES 입력, PC의 IPv4 확인.
+8) Android 앱 최초 실행 때 http://PC의_IPv4:8765 입력.
+9) 기억 저장, 대화, 음성 인식, 지도 경로를 순서대로 테스트.
+
+제한: 이 APK는 독립형 LLM이 아닙니다. PC Ollama 서버가 켜져 있어야 생성형 AI가 작동합니다.
+차량/경로 상태 중 일부는 가상 데이터이고 Pleos SDK는 미연동입니다.
+GitHub Actions 데모 서명 키는 임시 키라 매번 빌드 시 앱 서명이 달라져 기존 버전 위에 업데이트 설치할 수 없습니다.
+상용 배포용 서명이 아니며 실제 앱으로 배포하지 마세요.

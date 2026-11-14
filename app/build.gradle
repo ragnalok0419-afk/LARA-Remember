@@ -1,0 +1,18 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'com.remember.lara'
+ compileSdk 34
+ defaultConfig { applicationId 'com.remember.lara'; minSdk 28; targetSdk 34; versionCode 2; versionName '0.2.0-demo' }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+ signingConfigs {
+   demoRelease {
+     if (System.getenv('LARA_SIGN_STORE')) {
+       storeFile file(System.getenv('LARA_SIGN_STORE'))
+       storePassword System.getenv('LARA_SIGN_PASS')
+       keyAlias 'lara-demo'
+       keyPassword System.getenv('LARA_SIGN_PASS')
+     }
+   }
+ }
+ buildTypes { release { minifyEnabled false; if (System.getenv('LARA_SIGN_STORE')) signingConfig signingConfigs.demoRelease } }
+}
