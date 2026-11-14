@@ -1,1 +1,1 @@
-이 폴더에는 실제 Android release APK가 아직 없습니다. GitHub Actions 빌드 및 실기기 설치 테스트 성공 후 실제 APK를 추가하세요. 이름만 변경한 빈 파일을 절대 제출하지 마세요.
+GitHub에서 배포한 LARA 시연용 release APK입니다. GitHub Actions 빌드는 성공했으나, 실제 휴대폰 설치·실행과 보안 경고 원인은 아직 검증되지 않았습니다. Pleos SDK는 미연동 상태입니다.
